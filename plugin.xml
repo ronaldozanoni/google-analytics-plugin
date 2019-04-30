@@ -14,6 +14,10 @@
     <clobbers target="ga" />
   </js-module>
 
+  <js-module src="www/analyticsClient.js" name="analyticsClient">
+      <runs />
+  </js-module>
+
   <platform name="browser">
     <js-module src="browser/UniversalAnalyticsProxy.js" name="UniversalAnalyticsProxy">
       <runs />
