@@ -13,7 +13,7 @@ UniversalAnalyticsPlugin.prototype.getAll = function() {
   });
 };
 
-UniversalAnalyticsPlugin.prototype.getByName = function() {
+UniversalAnalyticsPlugin.prototype.getByName = function (trackerName) {
   return trackers[trackerName];
 };
 
@@ -37,6 +37,8 @@ UniversalAnalyticsPlugin.prototype.startTrackerWithId = function(id, dispatchPer
   cordova.exec(function () {
     success && success(analyticsClient);
   }, error, 'UniversalAnalytics', 'startTrackerWithId', [id, dispatchPeriod, trackerName]);
+
+  return analyticsClient;
 };
 
 module.exports = new UniversalAnalyticsPlugin();
