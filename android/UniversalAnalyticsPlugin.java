@@ -33,7 +33,7 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
     public static final String ADD_TRANSACTION_ITEM = "addTransactionItem";
 
     // Enhanced Ecommerce
-    public static final String ADD_PRODUCT = "addProduct";
+    public static final String SEND_PRODUCT_EVENT = "sendProductEvent";
 
     public static final String SET_ALLOW_IDFA_COLLECTION = "setAllowIDFACollection";
     public static final String SET_USER_ID = "setUserId";
@@ -121,12 +121,12 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
                         length > 6 ? args.getString(6) : null, callbackContext);
             }
             return true;
-        } else if (ADD_PRODUCT.equals(action)) {
+        } else if (SEND_PRODUCT_EVENT.equals(action)) {
             int length = args.length();
 
             if (length > 0) {
               Tracker tracker = this.getTrackerFromArgs(args, 9);
-              this.addProduct(
+              this.sendProductEvent(
                 tracker,
                 args.getString(0),
                 length > 1 ? args.getString(1) : "",
@@ -412,14 +412,12 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         }
     }
 
-    private void addProduct(
-      Tracker tracker, String productId, String productName,
+    private void sendProductEvent(Tracker tracker, String productId, String productName,
       String category, String brand, String variant, Integer position,
-      String currencyCode, String screenName, String productActionList,
+      String currencyCode, String screenName, String productActionType,
       CallbackContext callbackContext) {
 
-        Log.v(TAG, " addProduct ");
-        System.out.println(tracker);
+        Log.v(TAG, " sendProductEvent for action - " + productActionType);
 
         if (tracker == null) {
             callbackContext.error("Tracker not started");
@@ -437,10 +435,9 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
 
           addCustomDimensionsAndMetricsToHitBuilder(product);
 
-          ProductAction productAction = new ProductAction(ProductAction.ACTION_ADD)
-              .setProductActionList(productActionList);
+          ProductAction productAction = new ProductAction(productActionType);
 
-          HitBuilders.ScreenViewBuilder builder = new HitBuilders.ScreenViewBuilder()
+          HitBuilders.EventBuilder builder = new HitBuilders.EventBuilder()
               .addProduct(product)
               .setProductAction(productAction);
 

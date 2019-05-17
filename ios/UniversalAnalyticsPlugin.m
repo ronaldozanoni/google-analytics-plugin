@@ -579,12 +579,12 @@
 
 // Enhanced Ecommerce
 
-- (void) addProduct: (CDVInvokedUrlCommand*)command
+- (void) sendProductEvent: (CDVInvokedUrlCommand*)command
 {
     CDVPluginResult* pluginResult = nil;
     id<GAITracker> tracker = [self getTrackerFromCommand:command index:9];
 
-    NSLog(@"Analytics IOS - going addProduct with the tracker name %@", [tracker name]);
+    NSLog(@"Analytics IOS - going to sendProductEvent with the tracker name %@", [tracker name]);
 
     if (!tracker) {
       pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Tracker not started"];
@@ -603,7 +603,7 @@
       NSNumber *position = nil;
       NSString *currencyCode = nil;
       NSString *screenName = nil;
-      NSString *productActionList = nil;
+      NSString *productActionType = nil;
 
       if ([command.arguments count] > 0)
           productId = [command.arguments objectAtIndex:0];
@@ -630,7 +630,8 @@
           screenName = [command.arguments objectAtIndex:7];
 
       if ([command.arguments count] > 8)
-          productActionList = [command.arguments objectAtIndex:8];
+          productActionType = [command.arguments objectAtIndex:8];
+
 
       GAIEcommerceProduct *product = [[GAIEcommerceProduct alloc] init];
       [product setId: productId];
@@ -643,8 +644,7 @@
       [self addCustomDimensionsToProduct:product];
 
       GAIEcommerceProductAction *action = [[GAIEcommerceProductAction alloc] init];
-      [action setAction:kGAIPAAdd];
-      [action setProductActionList: productActionList];
+      [action setAction: productActionType];
 
       GAIDictionaryBuilder *builder = [GAIDictionaryBuilder createScreenView];
       [builder setProductAction:action];
