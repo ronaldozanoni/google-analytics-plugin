@@ -129,6 +129,25 @@ UniversalAnalyticsClient.prototype.addTransactionItem = function (transactionId,
   cordova.exec(success, error, 'UniversalAnalytics', 'addTransactionItem', [transactionId, name, sku, category, price, quantity, currencyCode, this.trackerName]);
 };
 
+
+/* Google Analytics Enhanced E-Commerce Tracking */
+/* https://developers.google.com/analytics/devguides/collection/analyticsjs/enhanced-ecommerce */
+
+UniversalAnalyticsClient.prototype.addProduct = function (
+  productId, productName, category, brand, variant,
+  position, currencyCode, screenName, productActionList,
+  success, error) {
+
+
+  console.log('AnalyticsService [UniversalAnalyticsClient] [addProduct]');
+
+  cordova.exec(success, error, 'UniversalAnalytics', 'addProduct', [
+    productId, productName, category, brand, variant, position,
+    currencyCode, screenName, productActionList, this.trackerName
+  ]);
+};
+
+
 /* automatic uncaught exception tracking */
 UniversalAnalyticsClient.prototype.enableUncaughtExceptionReporting = function (enable, success, error) {
   cordova.exec(success, error, 'UniversalAnalytics', 'enableUncaughtExceptionReporting', [enable, this.trackerName]);

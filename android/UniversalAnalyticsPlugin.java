@@ -4,6 +4,9 @@ import com.google.android.gms.analytics.GoogleAnalytics;
 import com.google.android.gms.analytics.Logger.LogLevel;
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.Tracker;
+import com.google.android.gms.analytics.ecommerce.Product;
+import com.google.android.gms.analytics.ecommerce.ProductAction;
+
 
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
@@ -28,6 +31,9 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
     public static final String ADD_DIMENSION = "addCustomDimension";
     public static final String ADD_TRANSACTION = "addTransaction";
     public static final String ADD_TRANSACTION_ITEM = "addTransactionItem";
+
+    // Enhanced Ecommerce
+    public static final String ADD_PRODUCT = "addProduct";
 
     public static final String SET_ALLOW_IDFA_COLLECTION = "setAllowIDFACollection";
     public static final String SET_USER_ID = "setUserId";
@@ -113,6 +119,26 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
                         length > 2 ? args.getString(2) : "", length > 3 ? args.getString(3) : "",
                         length > 4 ? args.getDouble(4) : 0, length > 5 ? args.getLong(5) : 0,
                         length > 6 ? args.getString(6) : null, callbackContext);
+            }
+            return true;
+        } else if (ADD_PRODUCT.equals(action)) {
+            int length = args.length();
+
+            if (length > 0) {
+              Tracker tracker = this.getTrackerFromArgs(args, 9);
+              this.addProduct(
+                tracker,
+                args.getString(0),
+                length > 1 ? args.getString(1) : "",
+                length > 2 ? args.getString(2) : "",
+                length > 3 ? args.getString(3) : "",
+                length > 4 ? args.getString(4) : "",
+                length > 5 && !args.isNull(5) ? args.getInt(5) : 1,
+                length > 6 ? args.getString(6) : "",
+                length > 7 ? args.getString(7) : "",
+                length > 8 ? args.getString(8) : "",
+                callbackContext
+              );
             }
             return true;
         } else if (SET_ALLOW_IDFA_COLLECTION.equals(action)) {
@@ -383,6 +409,48 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
             callbackContext.success("Add Transaction Item: " + id);
         } else {
             callbackContext.error("Expected non-empty ID.");
+        }
+    }
+
+    private void addProduct(
+      Tracker tracker, String productId, String productName,
+      String category, String brand, String variant, Integer position,
+      String currencyCode, String screenName, String productActionList,
+      CallbackContext callbackContext) {
+
+        Log.v(TAG, " addProduct ");
+        System.out.println(tracker);
+
+        if (tracker == null) {
+            callbackContext.error("Tracker not started");
+            return;
+        }
+
+        if (null != productId && productId.length() > 0) {
+          Product product =  new Product()
+              .setId(productId)
+              .setName(productName)
+              .setCategory(category)
+              .setBrand(brand)
+              .setVariant(variant)
+              .setPosition(position);
+
+          addCustomDimensionsAndMetricsToHitBuilder(product);
+
+          ProductAction productAction = new ProductAction(ProductAction.ACTION_ADD)
+              .setProductActionList(productActionList);
+
+          HitBuilders.ScreenViewBuilder builder = new HitBuilders.ScreenViewBuilder()
+              .addProduct(product)
+              .setProductAction(productAction);
+
+          tracker.setScreenName(screenName);
+          tracker.set("&cu", currencyCode);
+          tracker.send(builder.build());
+
+          callbackContext.success("Add Product: " + productId);
+        } else {
+          callbackContext.error("Expected non-empty ID.");
         }
     }
 

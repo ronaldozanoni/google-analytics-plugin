@@ -5,6 +5,7 @@
 #import "GAI.h"
 #import "GAIDictionaryBuilder.h"
 #import "GAIFields.h"
+#import "GAIEcommerceFields.h"
 
 #define DEFAUlT_TRACKER_NAME @"default"
 
@@ -84,6 +85,23 @@
 
         /* NSLog(@"Setting tracker dimension slot %@: <%@>", key, value); */
         [tracker set:[GAIFields customDimensionForIndex:myKey.unsignedIntegerValue]
+        value:value];
+      }
+    }
+}
+
+- (void) addCustomDimensionsToProduct: (GAIEcommerceProduct*) product
+{
+    if (_customDimensions) {
+      for (NSString *key in _customDimensions.allKeys) {
+        NSString *value = [_customDimensions objectForKey:key];
+
+        NSNumberFormatter *f = [[NSNumberFormatter alloc] init];
+        f.numberStyle = NSNumberFormatterDecimalStyle;
+        NSNumber *myKey = [f numberFromString:key];
+
+        /* NSLog(@"Setting tracker dimension slot %@: <%@>", key, value); */
+        [product setCustomDimension:[GAIFields customDimensionForIndex:myKey.unsignedIntegerValue]
         value:value];
       }
     }
@@ -553,6 +571,88 @@
                                                               quantity:quantity                 // (NSNumber)  Product quantity
                                                           currencyCode:currencyCode] build]];    // (NSString) Currency code
 
+
+      pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+      [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }];
+}
+
+// Enhanced Ecommerce
+
+- (void) addProduct: (CDVInvokedUrlCommand*)command
+{
+    CDVPluginResult* pluginResult = nil;
+    id<GAITracker> tracker = [self getTrackerFromCommand:command index:9];
+
+    NSLog(@"Analytics IOS - going addProduct with the tracker name %@", [tracker name]);
+
+    if (!tracker) {
+      pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Tracker not started"];
+      [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+      return;
+    }
+
+    [self.commandDelegate runInBackground:^{
+
+      CDVPluginResult* pluginResult = nil;
+      NSString *productId = nil;
+      NSString *productName = nil;
+      NSString *category = nil;
+      NSString *brand = nil;
+      NSString *variant = nil;
+      NSNumber *position = nil;
+      NSString *currencyCode = nil;
+      NSString *screenName = nil;
+      NSString *productActionList = nil;
+
+      if ([command.arguments count] > 0)
+          productId = [command.arguments objectAtIndex:0];
+
+      if ([command.arguments count] > 1)
+          productName = [command.arguments objectAtIndex:1];
+
+      if ([command.arguments count] > 2)
+          category = [command.arguments objectAtIndex:2];
+
+      if ([command.arguments count] > 3)
+          brand = [command.arguments objectAtIndex:3];
+
+      if ([command.arguments count] > 4)
+          variant = [command.arguments objectAtIndex:4];
+
+      if ([command.arguments count] > 5)
+          position = [command.arguments objectAtIndex:5];
+
+      if ([command.arguments count] > 6)
+          currencyCode = [command.arguments objectAtIndex:6];
+
+      if ([command.arguments count] > 7)
+          screenName = [command.arguments objectAtIndex:7];
+
+      if ([command.arguments count] > 8)
+          productActionList = [command.arguments objectAtIndex:8];
+
+      GAIEcommerceProduct *product = [[GAIEcommerceProduct alloc] init];
+      [product setId: productId];
+      [product setName: productName];
+      [product setCategory: category];
+      [product setBrand: brand];
+      [product setVariant: variant];
+      [product setPosition: position];
+
+      [self addCustomDimensionsToProduct:product];
+
+      GAIEcommerceProductAction *action = [[GAIEcommerceProductAction alloc] init];
+      [action setAction:kGAIPAAdd];
+      [action setProductActionList: productActionList];
+
+      GAIDictionaryBuilder *builder = [GAIDictionaryBuilder createScreenView];
+      [builder setProductAction:action];
+
+      [builder addProduct:product];
+      [tracker set:kGAIScreenName value: screenName];
+      [tracker set:kGAICurrencyCode value: currencyCode];
+      [tracker send:[builder build]];
 
       pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
       [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];

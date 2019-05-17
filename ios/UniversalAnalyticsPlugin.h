@@ -30,5 +30,7 @@
 - (void) addTransaction: (CDVInvokedUrlCommand*)command;
 - (void) addTransactionItem: (CDVInvokedUrlCommand*)command;
 
+- (void) addProduct: (CDVInvokedUrlCommand*)command;
+
 @end
 
