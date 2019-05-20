@@ -1,7 +1,9 @@
 
+// https://developers.google.com/android/reference/com/google/android/gms/analytics/ecommerce/ProductAction.html
 var ProductAction = {
   ACTION_ADD: 'add',
-  ACTION_REMOVE: 'remove'
+  ACTION_REMOVE: 'remove',
+  ACTION_DETAIL: 'detail'
 };
 
 function UniversalAnalyticsClient(trackerName) {
@@ -189,6 +191,17 @@ UniversalAnalyticsClient.prototype.removeProduct = function (
   ]);
 };
 
+UniversalAnalyticsClient.prototype.productDetail = function (
+  productId, productName, category, brand, variant,
+  position, currencyCode, screenName, success, error) {
+
+  console.log('AnalyticsService [UniversalAnalyticsClient] [addProduct]');
+
+  cordova.exec(success, error, 'UniversalAnalytics', 'sendProductEvent', [
+    productId, productName, category, brand, variant, position,
+    currencyCode, screenName, ProductAction.ACTION_DETAIL, this.trackerName
+  ]);
+};
 
 /* automatic uncaught exception tracking */
 UniversalAnalyticsClient.prototype.enableUncaughtExceptionReporting = function (enable, success, error) {
