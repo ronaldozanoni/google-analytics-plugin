@@ -464,6 +464,80 @@
     }];
 }
 
+- (void) addProductsToBuilder: (GAIDictionaryBuilder*) builder
+                              products: (NSArray *) products
+{
+    for (NSDictionary *product in products) {
+      GAIEcommerceProduct *GAIProduct = [[GAIEcommerceProduct alloc] init];
+
+      [GAIProduct setId: [product objectForKey:@"id"]];
+      [GAIProduct setName: [product objectForKey:@"name"]];
+      [GAIProduct setCategory: [product objectForKey:@"category"]];
+      [GAIProduct setBrand: [product objectForKey:@"brand"]];
+      [GAIProduct setVariant: [product objectForKey:@"variant"]];
+      [GAIProduct setQuantity: [product objectForKey:@"quantity"]];
+      [GAIProduct setPrice: [product objectForKey:@"price"]];
+      [GAIProduct setCouponCode: [product objectForKey:@"couponCode"]];
+
+      [self addCustomDimensionsToProduct:GAIProduct];
+      [builder addProduct:GAIProduct];
+    }
+}
+
+- (void) trackStartCheckout: (CDVInvokedUrlCommand*)command
+{
+    CDVPluginResult* pluginResult = nil;
+    id<GAITracker> tracker = [self getTrackerFromCommand:command index:2];
+
+    if (!tracker) {
+      pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Tracker not started"];
+      [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+      return;
+    }
+
+    NSDictionary *checkoutModel = [command.arguments objectAtIndex:0];
+
+    [self.commandDelegate runInBackground:^{
+      CDVPluginResult* pluginResult = nil;
+
+      NSString *screenName = nil;
+
+      if ([command.arguments count] > 1)
+          screenName = [command.arguments objectAtIndex:1];
+
+      NSDictionary *actionField = [checkoutModel objectForKey:@"actionField"];
+      NSArray *products = [checkoutModel objectForKey:@"products"];
+      GAIDictionaryBuilder *builder = [GAIDictionaryBuilder createScreenView];
+
+      [self addProductsToBuilder:builder products: products];
+
+      GAIEcommerceProductAction *action = [[GAIEcommerceProductAction alloc] init];
+      [action setAction: kGAIPACheckout];
+
+      if (actionField != nil) {
+        NSNumber *step = [actionField objectForKey:@"step"];
+        NSString *stepOption = [actionField objectForKey:@"option"];
+
+        if (step != nil) {
+          [action setCheckoutStep: step];
+        }
+
+        if (stepOption != nil) {
+          [action setCheckoutOption: stepOption];
+        }
+      }
+
+      [builder setProductAction:action];
+
+      [tracker set:kGAIScreenName value: screenName];
+      [tracker set:kGAICurrencyCode value: [checkoutModel objectForKey:@"currencyCode"]];
+      [tracker send:[builder build]];
+
+      pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+      [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }];
+}
+
 - (void) addTransaction: (CDVInvokedUrlCommand*)command
 {
     CDVPluginResult* pluginResult = nil;
@@ -493,24 +567,9 @@
       }
 
       NSArray *products = [transaction objectForKey:@"products"];
-
       GAIDictionaryBuilder *builder = [GAIDictionaryBuilder createScreenView];
 
-      for (NSDictionary *product in products) {
-        GAIEcommerceProduct *GAIProduct = [[GAIEcommerceProduct alloc] init];
-
-        [GAIProduct setId: [product objectForKey:@"id"]];
-        [GAIProduct setName: [product objectForKey:@"name"]];
-        [GAIProduct setCategory: [product objectForKey:@"category"]];
-        [GAIProduct setBrand: [product objectForKey:@"brand"]];
-        [GAIProduct setVariant: [product objectForKey:@"variant"]];
-        [GAIProduct setQuantity: [product objectForKey:@"quantity"]];
-        [GAIProduct setPrice: [product objectForKey:@"price"]];
-        [GAIProduct setCouponCode: [product objectForKey:@"couponCode"]];
-
-        [self addCustomDimensionsToProduct:GAIProduct];
-        [builder addProduct:GAIProduct];
-      }
+      [self addProductsToBuilder:builder products: products];
 
       GAIEcommerceProductAction *action = [[GAIEcommerceProductAction alloc] init];
       [action setAction: kGAIPAPurchase];
@@ -533,15 +592,12 @@
     }];
 }
 
-
 // Enhanced Ecommerce
 
 - (void) sendProductEvent: (CDVInvokedUrlCommand*)command
 {
     CDVPluginResult* pluginResult = nil;
     id<GAITracker> tracker = [self getTrackerFromCommand:command index:9];
-
-    NSLog(@"Analytics IOS - going to sendProductEvent with the tracker name %@", [tracker name]);
 
     if (!tracker) {
       pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Tracker not started"];

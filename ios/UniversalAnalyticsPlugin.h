@@ -27,8 +27,8 @@
 - (void) trackTiming: (CDVInvokedUrlCommand*)command;
 - (void) trackView: (CDVInvokedUrlCommand*)command;
 - (void) trackException: (CDVInvokedUrlCommand*)command;
+- (void) trackStartCheckout: (CDVInvokedUrlCommand*)command;
 - (void) addTransaction: (CDVInvokedUrlCommand*)command;
-- (void) addTransactionItem: (CDVInvokedUrlCommand*)command;
 
 - (void) sendProductEvent: (CDVInvokedUrlCommand*)command;
 

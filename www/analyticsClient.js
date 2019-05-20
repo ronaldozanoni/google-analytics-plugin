@@ -134,10 +134,10 @@ UniversalAnalyticsClient.prototype.trackTiming = function (category, intervalInM
  * {
  *  id: String,
  *  affiliation: String,
- *  revenue: Double,
- *  tax: Double,
- *  shipping: Double,
- *  couponCode: String,
+ *  revenue: Double, (Optional)
+ *  tax: Double, (Optional)
+ *  shipping: Double, (Optional)
+ *  couponCode: String, (Optional)
  *  currencyCode: String,
  *  products: [ProductItem]
  * }
@@ -147,11 +147,11 @@ UniversalAnalyticsClient.prototype.trackTiming = function (category, intervalInM
  * {
  *  id: String,
  *  name: String,
- *  category: String,
- *  brand: String,
- *  variant: String,
+ *  category: String, (Optional)
+ *  brand: String, (Optional)
+ *  variant: String, (Optional)
  *  price: Double,
- *  couponCode: String,
+ *  couponCode: String, (Optional)
  *  quantity: Number
  * }
  */
@@ -167,7 +167,7 @@ UniversalAnalyticsClient.prototype.addTransaction = function (transaction, scree
 /* Google Analytics Enhanced E-Commerce Tracking */
 /* https://developers.google.com/analytics/devguides/collection/analyticsjs/enhanced-ecommerce */
 
-UniversalAnalyticsClient.prototype.addProduct = function (
+UniversalAnalyticsClient.prototype.trackAddProduct = function (
   productId, productName, category, brand, variant,
   position, currencyCode, screenName, success, error) {
 
@@ -179,7 +179,7 @@ UniversalAnalyticsClient.prototype.addProduct = function (
   ]);
 };
 
-UniversalAnalyticsClient.prototype.removeProduct = function (
+UniversalAnalyticsClient.prototype.trackRemoveProduct = function (
   productId, productName, category, brand, variant,
   position, currencyCode, screenName, success, error) {
 
@@ -191,7 +191,7 @@ UniversalAnalyticsClient.prototype.removeProduct = function (
   ]);
 };
 
-UniversalAnalyticsClient.prototype.productDetail = function (
+UniversalAnalyticsClient.prototype.trackProductDetail = function (
   productId, productName, category, brand, variant,
   position, currencyCode, screenName, success, error) {
 
@@ -200,6 +200,50 @@ UniversalAnalyticsClient.prototype.productDetail = function (
   cordova.exec(success, error, 'UniversalAnalytics', 'sendProductEvent', [
     productId, productName, category, brand, variant, position,
     currencyCode, screenName, ProductAction.ACTION_DETAIL, this.trackerName
+  ]);
+};
+
+/**
+ * Checkout model
+ * {
+ *  actionField: ActionField, (Optional)
+ *  products: [ProductItem],
+ *  currency: String (Optional)
+ * }
+ *
+ * ActionField model
+ * {
+ *  step: Number,
+ *  option: String (Optional)
+ * }
+ *
+ * ProductItem model
+ * {
+ *  id: String,
+ *  name: String,
+ *  category: String, (Optional)
+ *  brand: String, (Optional)
+ *  variant: String, (Optional)
+ *  price: Double, (Optional)
+ *  couponCode: String, (Optional)
+ *  quantity: Number
+ * }
+ */
+
+UniversalAnalyticsClient.prototype.trackStartCheckout = function (
+  checkoutModel, screenName, success, error) {
+  console.log('AnalyticsService [UniversalAnalyticsClient] [trackStartCheckout]');
+
+  if (!checkoutModel.actionField) {
+    checkoutModel.actionField = {};
+  }
+
+  if (!checkoutModel.actionField.step) {
+    checkoutModel.actionField.step = 1;
+  }
+
+  cordova.exec(success, error, 'UniversalAnalytics', 'trackStartCheckout', [
+    checkoutModel, screenName, this.trackerName
   ]);
 };
 

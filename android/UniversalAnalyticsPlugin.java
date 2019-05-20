@@ -3,6 +3,7 @@ package com.danielcwilson.plugins.analytics;
 import com.google.android.gms.analytics.GoogleAnalytics;
 import com.google.android.gms.analytics.Logger.LogLevel;
 import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.HitBuilders.HitBuilder;
 import com.google.android.gms.analytics.Tracker;
 import com.google.android.gms.analytics.ecommerce.Product;
 import com.google.android.gms.analytics.ecommerce.ProductAction;
@@ -29,6 +30,7 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
     public static final String TRACK_EXCEPTION = "trackException";
     public static final String TRACK_TIMING = "trackTiming";
     public static final String TRACK_METRIC = "trackMetric";
+    public static final String TRACK_START_CHECKOUT = "trackStartCheckout";
     public static final String ADD_DIMENSION = "addCustomDimension";
     public static final String ADD_TRANSACTION = "addTransaction";
 
@@ -97,6 +99,17 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
               this.trackMetric(args.getInt(0), length > 1 ? args.getString(1) : "", callbackContext);
             }
             return true;
+        } else if (TRACK_START_CHECKOUT.equals(action)) {
+          int length = args.length();
+          if (length > 0) {
+            Tracker tracker = this.getTrackerFromArgs(args, 2);
+            this.trackStartCheckout(
+              tracker,
+              args.getJSONObject(0),
+              args.getString(1), // screen name
+              callbackContext);
+          }
+          return true;
         } else if (ADD_DIMENSION.equals(action)) {
             Integer key = args.getInt(0);
             String value = args.getString(1);
@@ -113,7 +126,8 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
                 callbackContext);
             }
             return true;
-        } else if (SEND_PRODUCT_EVENT.equals(action)) {
+        }
+        else if (SEND_PRODUCT_EVENT.equals(action)) {
             int length = args.length();
 
             if (length > 0) {
@@ -252,6 +266,41 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         }
     }
 
+    private void addProductsToHitBuilder(HitBuilder builder, JSONArray products) throws JSONException {
+        for (int i = 0; i < products.length(); i++) {
+          JSONObject productData = products.getJSONObject(i);
+
+          Product product =  new Product()
+              .setId(productData.getString("id"))
+              .setName(productData.getString("name"))
+              .setPrice(productData.getDouble("price"));
+
+          if (productData.has("category")) {
+            product.setCategory(productData.getString("category"));
+          }
+
+          if (productData.has("brand")) {
+            product.setBrand(productData.getString("brand"));
+          }
+
+          if (productData.has("variant")) {
+            product.setVariant(productData.getString("variant"));
+          }
+
+          if (productData.has("couponCode")) {
+            product.setCouponCode(productData.getString("couponCode"));
+          }
+
+          if (productData.has("quantity")) {
+            product.setQuantity(productData.getInt("quantity"));
+          } else {
+            product.setQuantity(1);
+          }
+
+          builder.addProduct(product);
+        }
+    }
+
     private void trackView(Tracker tracker, String screenname, String campaignUrl, boolean newSession, CallbackContext callbackContext) {
         if (tracker == null) {
             callbackContext.error("Tracker not started");
@@ -366,7 +415,47 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         }
     }
 
+    private void trackStartCheckout(Tracker tracker, JSONObject checkoutModel, String screenName, CallbackContext callbackContext) throws JSONException {
+      if (tracker == null) {
+          callbackContext.error("Tracker not started");
+          return;
+      }
+
+      HitBuilders.ScreenViewBuilder hitBuilder = new HitBuilders.ScreenViewBuilder();
+      addCustomDimensionsAndMetricsToHitBuilder(hitBuilder);
+
+      JSONArray products = checkoutModel.getJSONArray("products");
+      addProductsToHitBuilder(hitBuilder, products);
+
+      ProductAction productAction = new ProductAction(ProductAction.ACTION_CHECKOUT);
+
+      if (checkoutModel.has("actionField")) {
+        JSONObject actionFieldModel = checkoutModel.getJSONObject("actionField");
+
+        if (actionFieldModel.has("step")) {
+          productAction.setCheckoutStep(actionFieldModel.getInt("step"));
+        }
+
+        if (actionFieldModel.has("option")) {
+          productAction.setCheckoutOptions(actionFieldModel.getString("option"));
+        }
+      }
+
+      hitBuilder.setProductAction(productAction);
+      tracker.setScreenName(screenName);
+
+      if (checkoutModel.has("currencyCode")) {
+        tracker.set("&cu", checkoutModel.getString("currencyCode"));
+      }
+
+      tracker.send(hitBuilder.build());
+
+      callbackContext.success("Start checkout success");
+    }
+
     private void addTransaction(Tracker tracker, JSONObject transaction, String screenName, CallbackContext callbackContext) throws JSONException {
+        Log.v(TAG, " addTransaction " + tracker);
+
         if (tracker == null) {
             callbackContext.error("Tracker not started");
             return;
@@ -383,39 +472,7 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         addCustomDimensionsAndMetricsToHitBuilder(hitBuilder);
 
         JSONArray products = transaction.getJSONArray("products");
-
-        for (int i = 0; i < products.length(); i++) {
-          JSONObject productData = products.getJSONObject(i);
-
-          Product product =  new Product()
-              .setId(productData.getString("id"))
-              .setName(productData.getString("name"))
-              .setPrice(productData.getDouble("price"));
-
-          if (productData.has("category")) {
-            product.setCategory(productData.getString("category"));
-          }
-
-          if (productData.has("brand")) {
-            product.setBrand(productData.getString("brand"));
-          }
-
-          if (productData.has("variant")) {
-            product.setVariant(productData.getString("variant"));
-          }
-
-          if (productData.has("couponCode")) {
-            product.setCouponCode(productData.getString("couponCode"));
-          }
-
-          if (productData.has("quantity")) {
-            product.setQuantity(productData.getInt("quantity"));
-          } else {
-            product.setQuantity(1);
-          }
-
-          hitBuilder.addProduct(product);
-        }
+        addProductsToHitBuilder(hitBuilder, products);
 
         ProductAction productAction = new ProductAction(ProductAction.ACTION_PURCHASE)
             .setTransactionId(transactionId);
