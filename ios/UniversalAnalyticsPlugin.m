@@ -467,7 +467,7 @@
 - (void) addTransaction: (CDVInvokedUrlCommand*)command
 {
     CDVPluginResult* pluginResult = nil;
-    id<GAITracker> tracker = [self getTrackerFromCommand:command index:6];
+    id<GAITracker> tracker = [self getTrackerFromCommand:command index:2];
 
     if (!tracker) {
       pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Tracker not started"];
@@ -475,107 +475,64 @@
       return;
     }
 
+    NSDictionary *transaction = [command.arguments objectAtIndex:0];
+
     [self.commandDelegate runInBackground:^{
       CDVPluginResult* pluginResult = nil;
 
-      NSString *transactionId = nil;
-      NSString *affiliation = nil;
-      NSNumber *revenue = nil;
-      NSNumber *tax = nil;
-      NSNumber *shipping = nil;
-      NSString *currencyCode = nil;
-
-
-      if ([command.arguments count] > 0)
-          transactionId = [command.arguments objectAtIndex:0];
+      NSString *screenName = nil;
 
       if ([command.arguments count] > 1)
-          affiliation = [command.arguments objectAtIndex:1];
+          screenName = [command.arguments objectAtIndex:1];
 
-      if ([command.arguments count] > 2)
-          revenue = [command.arguments objectAtIndex:2];
+      NSString *transactionId = [transaction objectForKey:@"id"];
 
-      if ([command.arguments count] > 3)
-          tax = [command.arguments objectAtIndex:3];
+      if (transactionId == nil) {
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Expected non-empty ID."];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+      }
 
-      if ([command.arguments count] > 4)
-          shipping = [command.arguments objectAtIndex:4];
+      NSArray *products = [transaction objectForKey:@"products"];
 
-      if ([command.arguments count] > 5)
-          currencyCode = [command.arguments objectAtIndex:5];
+      GAIDictionaryBuilder *builder = [GAIDictionaryBuilder createScreenView];
 
-      [tracker send:[[GAIDictionaryBuilder createTransactionWithId:transactionId             // (NSString) Transaction ID
-                                                       affiliation:affiliation         // (NSString) Affiliation
-                                                           revenue:revenue                  // (NSNumber) Order revenue (including tax and shipping)
-                                                               tax:tax                  // (NSNumber) Tax
-                                                          shipping:shipping                      // (NSNumber) Shipping
-                                                      currencyCode:currencyCode] build]];        // (NSString) Currency code
+      for (NSDictionary *product in products) {
+        GAIEcommerceProduct *GAIProduct = [[GAIEcommerceProduct alloc] init];
 
+        [GAIProduct setId: [product objectForKey:@"id"]];
+        [GAIProduct setName: [product objectForKey:@"name"]];
+        [GAIProduct setCategory: [product objectForKey:@"category"]];
+        [GAIProduct setBrand: [product objectForKey:@"brand"]];
+        [GAIProduct setVariant: [product objectForKey:@"variant"]];
+        [GAIProduct setQuantity: [product objectForKey:@"quantity"]];
+        [GAIProduct setPrice: [product objectForKey:@"price"]];
+        [GAIProduct setCouponCode: [product objectForKey:@"couponCode"]];
+
+        [self addCustomDimensionsToProduct:GAIProduct];
+        [builder addProduct:GAIProduct];
+      }
+
+      GAIEcommerceProductAction *action = [[GAIEcommerceProductAction alloc] init];
+      [action setAction: kGAIPAPurchase];
+      [action setTransactionId: transactionId];
+      [action setAffiliation: [transaction objectForKey:@"affiliation"]];
+      [action setRevenue: [transaction objectForKey:@"revenue"]];
+      [action setTax: [transaction objectForKey:@"tax"]];
+      [action setShipping: [transaction objectForKey:@"shipping"]];
+      [action setCouponCode: [transaction objectForKey:@"couponCode"]];
+
+      [builder setProductAction:action];
+
+
+      [tracker set:kGAIScreenName value: screenName];
+      [tracker set:kGAICurrencyCode value: [transaction objectForKey:@"currencyCode"]];
+      [tracker send:[builder build]];
 
       pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
       [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
 }
 
-
-
-- (void) addTransactionItem: (CDVInvokedUrlCommand*)command
-{
-    CDVPluginResult* pluginResult = nil;
-    id<GAITracker> tracker = [self getTrackerFromCommand:command index:7];
-
-    if (!tracker) {
-      pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Tracker not started"];
-      [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-      return;
-    }
-
-    [self.commandDelegate runInBackground:^{
-
-      CDVPluginResult* pluginResult = nil;
-      NSString *transactionId = nil;
-      NSString *name = nil;
-      NSString *sku = nil;
-      NSString *category = nil;
-      NSNumber *price = nil;
-      NSNumber *quantity = nil;
-      NSString *currencyCode = nil;
-
-
-      if ([command.arguments count] > 0)
-          transactionId = [command.arguments objectAtIndex:0];
-
-      if ([command.arguments count] > 1)
-          name = [command.arguments objectAtIndex:1];
-
-      if ([command.arguments count] > 2)
-          sku = [command.arguments objectAtIndex:2];
-
-      if ([command.arguments count] > 3)
-          category = [command.arguments objectAtIndex:3];
-
-      if ([command.arguments count] > 4)
-          price = [command.arguments objectAtIndex:4];
-
-      if ([command.arguments count] > 5)
-          quantity = [command.arguments objectAtIndex:5];
-
-      if ([command.arguments count] > 6)
-          currencyCode = [command.arguments objectAtIndex:6];
-
-      [tracker send:[[GAIDictionaryBuilder createItemWithTransactionId:transactionId         // (NSString) Transaction ID
-                                                                  name:name  // (NSString) Product Name
-                                                                   sku:sku           // (NSString) Product SKU
-                                                              category:category  // (NSString) Product category
-                                                                 price:price               // (NSNumber)  Product price
-                                                              quantity:quantity                 // (NSNumber)  Product quantity
-                                                          currencyCode:currencyCode] build]];    // (NSString) Currency code
-
-
-      pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-      [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-    }];
-}
 
 // Enhanced Ecommerce
 

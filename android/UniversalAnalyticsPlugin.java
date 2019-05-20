@@ -13,6 +13,7 @@ import org.apache.cordova.CallbackContext;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -30,7 +31,6 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
     public static final String TRACK_METRIC = "trackMetric";
     public static final String ADD_DIMENSION = "addCustomDimension";
     public static final String ADD_TRANSACTION = "addTransaction";
-    public static final String ADD_TRANSACTION_ITEM = "addTransactionItem";
 
     // Enhanced Ecommerce
     public static final String SEND_PRODUCT_EVENT = "sendProductEvent";
@@ -105,20 +105,12 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         } else if (ADD_TRANSACTION.equals(action)) {
             int length = args.length();
             if (length > 0) {
-              Tracker tracker = this.getTrackerFromArgs(args, 6);
-              this.addTransaction(tracker, args.getString(0), length > 1 ? args.getString(1) : "",
-                        length > 2 ? args.getDouble(2) : 0, length > 3 ? args.getDouble(3) : 0,
-                        length > 4 ? args.getDouble(4) : 0, length > 5 ? args.getString(5) : null, callbackContext);
-            }
-            return true;
-        } else if (ADD_TRANSACTION_ITEM.equals(action)) {
-            int length = args.length();
-            if (length > 0) {
-              Tracker tracker = this.getTrackerFromArgs(args, 7);
-              this.addTransactionItem(tracker, args.getString(0), length > 1 ? args.getString(1) : "",
-                        length > 2 ? args.getString(2) : "", length > 3 ? args.getString(3) : "",
-                        length > 4 ? args.getDouble(4) : 0, length > 5 ? args.getLong(5) : 0,
-                        length > 6 ? args.getString(6) : null, callbackContext);
+              Tracker tracker = this.getTrackerFromArgs(args, 2);
+              this.addTransaction(
+                tracker,
+                args.getJSONObject(0),
+                args.getString(1), // screen name
+                callbackContext);
             }
             return true;
         } else if (SEND_PRODUCT_EVENT.equals(action)) {
@@ -374,42 +366,90 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         }
     }
 
-    private void addTransaction(Tracker tracker, String id, String affiliation, double revenue, double tax, double shipping,
-            String currencyCode, CallbackContext callbackContext) {
+    private void addTransaction(Tracker tracker, JSONObject transaction, String screenName, CallbackContext callbackContext) throws JSONException {
         if (tracker == null) {
             callbackContext.error("Tracker not started");
             return;
         }
 
-        if (null != id && id.length() > 0) {
-            HitBuilders.TransactionBuilder hitBuilder = new HitBuilders.TransactionBuilder();
-            addCustomDimensionsAndMetricsToHitBuilder(hitBuilder);
+        String transactionId = transaction.getString("id");
 
-            tracker.send(hitBuilder.setTransactionId(id).setAffiliation(affiliation).setRevenue(revenue).setTax(tax)
-                    .setShipping(shipping).setCurrencyCode(currencyCode).build()); //Deprecated
-            callbackContext.success("Add Transaction: " + id);
-        } else {
-            callbackContext.error("Expected non-empty ID.");
-        }
-    }
-
-    private void addTransactionItem(Tracker tracker, String id, String name, String sku, String category, double price, long quantity,
-            String currencyCode, CallbackContext callbackContext) {
-        if (tracker == null) {
-            callbackContext.error("Tracker not started");
-            return;
+        if (null == transactionId || transactionId.length() == 0) {
+          callbackContext.error("Expected non-empty ID.");
+          return;
         }
 
-        if (null != id && id.length() > 0) {
-            HitBuilders.ItemBuilder hitBuilder = new HitBuilders.ItemBuilder();
-            addCustomDimensionsAndMetricsToHitBuilder(hitBuilder);
+        HitBuilders.ScreenViewBuilder hitBuilder = new HitBuilders.ScreenViewBuilder();
+        addCustomDimensionsAndMetricsToHitBuilder(hitBuilder);
 
-            tracker.send(hitBuilder.setTransactionId(id).setName(name).setSku(sku).setCategory(category).setPrice(price)
-                    .setQuantity(quantity).setCurrencyCode(currencyCode).build()); //Deprecated
-            callbackContext.success("Add Transaction Item: " + id);
-        } else {
-            callbackContext.error("Expected non-empty ID.");
+        JSONArray products = transaction.getJSONArray("products");
+
+        for (int i = 0; i < products.length(); i++) {
+          JSONObject productData = products.getJSONObject(i);
+
+          Product product =  new Product()
+              .setId(productData.getString("id"))
+              .setName(productData.getString("name"))
+              .setPrice(productData.getDouble("price"));
+
+          if (productData.has("category")) {
+            product.setCategory(productData.getString("category"));
+          }
+
+          if (productData.has("brand")) {
+            product.setBrand(productData.getString("brand"));
+          }
+
+          if (productData.has("variant")) {
+            product.setVariant(productData.getString("variant"));
+          }
+
+          if (productData.has("couponCode")) {
+            product.setCouponCode(productData.getString("couponCode"));
+          }
+
+          if (productData.has("quantity")) {
+            product.setQuantity(productData.getInt("quantity"));
+          } else {
+            product.setQuantity(1);
+          }
+
+          hitBuilder.addProduct(product);
         }
+
+        ProductAction productAction = new ProductAction(ProductAction.ACTION_PURCHASE)
+            .setTransactionId(transactionId);
+
+        if (transaction.has("affiliation")) {
+          productAction.setTransactionAffiliation(transaction.getString("affiliation"));
+        }
+
+        if (transaction.has("revenue")) {
+          productAction.setTransactionRevenue(transaction.getDouble("revenue"));
+        }
+
+        if (transaction.has("tax")) {
+          productAction.setTransactionTax(transaction.getDouble("tax"));
+        }
+
+        if (transaction.has("shipping")) {
+          productAction.setTransactionShipping(transaction.getDouble("shipping"));
+        }
+
+        if (transaction.has("couponCode")) {
+          productAction.setTransactionCouponCode(transaction.getString("couponCode"));
+        }
+
+        hitBuilder.setProductAction(productAction);
+        tracker.setScreenName(screenName);
+
+        if (transaction.has("currencyCode")) {
+          tracker.set("&cu", transaction.getString("currencyCode"));
+        }
+
+        tracker.send(hitBuilder.build());
+
+        callbackContext.success("Add Transaction: " + transactionId);
     }
 
     private void sendProductEvent(Tracker tracker, String productId, String productName,
@@ -437,7 +477,7 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
 
           ProductAction productAction = new ProductAction(productActionType);
 
-          HitBuilders.EventBuilder builder = new HitBuilders.EventBuilder()
+          HitBuilders.ScreenViewBuilder builder = new HitBuilders.ScreenViewBuilder()
               .addProduct(product)
               .setProductAction(productAction);
 

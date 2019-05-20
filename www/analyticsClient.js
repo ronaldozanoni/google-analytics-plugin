@@ -127,14 +127,40 @@ UniversalAnalyticsClient.prototype.trackTiming = function (category, intervalInM
 
 /* Google Analytics e-Commerce Tracking */
 /* https://developers.google.com/analytics/devguides/collection/analyticsjs/ecommerce */
-UniversalAnalyticsClient.prototype.addTransaction = function (transactionId, affiliation, revenue, tax, shipping, currencyCode, success, error) {
-  cordova.exec(success, error, 'UniversalAnalytics', 'addTransaction', [transactionId, affiliation, revenue, tax, shipping, currencyCode, this.trackerName]);
-};
+/**
+ * Transaction model
+ * {
+ *  id: String,
+ *  affiliation: String,
+ *  revenue: Double,
+ *  tax: Double,
+ *  shipping: Double,
+ *  couponCode: String,
+ *  currencyCode: String,
+ *  products: [ProductItem]
+ * }
+ *
+ *
+ * ProductItem model
+ * {
+ *  id: String,
+ *  name: String,
+ *  category: String,
+ *  brand: String,
+ *  variant: String,
+ *  price: Double,
+ *  couponCode: String,
+ *  quantity: Number
+ * }
+ */
 
-UniversalAnalyticsClient.prototype.addTransactionItem = function (transactionId, name, sku, category, price, quantity, currencyCode, success, error) {
-  cordova.exec(success, error, 'UniversalAnalytics', 'addTransactionItem', [transactionId, name, sku, category, price, quantity, currencyCode, this.trackerName]);
+UniversalAnalyticsClient.prototype.addTransaction = function (transaction, screenName, success, error) {
+  cordova.exec(success, error, 'UniversalAnalytics', 'addTransaction', [
+    transaction,
+    screenName,
+    this.trackerName
+  ]);
 };
-
 
 /* Google Analytics Enhanced E-Commerce Tracking */
 /* https://developers.google.com/analytics/devguides/collection/analyticsjs/enhanced-ecommerce */
