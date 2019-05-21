@@ -13,6 +13,10 @@ UniversalAnalyticsPlugin.prototype.getAll = function() {
   });
 };
 
+UniversalAnalyticsPlugin.prototype.getDefaultTracker = function () {
+  return this.getByName('default');
+};
+
 UniversalAnalyticsPlugin.prototype.getByName = function (trackerName) {
   return trackers[trackerName];
 };
