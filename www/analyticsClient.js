@@ -151,12 +151,16 @@ UniversalAnalyticsClient.prototype.trackTiming = function (category, intervalInM
  *  brand: String, (Optional)
  *  variant: String, (Optional)
  *  price: Double,
+ *  quantity: Number,
  *  couponCode: String, (Optional)
- *  quantity: Number
+ *  position: Number, (Optional)
  * }
  */
 
-UniversalAnalyticsClient.prototype.addTransaction = function (transaction, screenName, success, error) {
+UniversalAnalyticsClient.prototype.addTransaction = function (
+  transaction, screenName, success, error
+) {
+
   cordova.exec(success, error, 'UniversalAnalytics', 'addTransaction', [
     transaction,
     screenName,
@@ -168,38 +172,38 @@ UniversalAnalyticsClient.prototype.addTransaction = function (transaction, scree
 /* https://developers.google.com/analytics/devguides/collection/analyticsjs/enhanced-ecommerce */
 
 UniversalAnalyticsClient.prototype.trackAddProduct = function (
-  productId, productName, category, brand, variant,
-  position, currencyCode, screenName, success, error) {
+  productItem, currencyCode, screenName, success, error
+) {
 
   console.log('AnalyticsService [UniversalAnalyticsClient] [addProduct]');
 
   cordova.exec(success, error, 'UniversalAnalytics', 'sendProductEvent', [
-    productId, productName, category, brand, variant, position,
-    currencyCode, screenName, ProductAction.ACTION_ADD, this.trackerName
+    productItem, currencyCode, screenName,
+    ProductAction.ACTION_ADD, this.trackerName
   ]);
 };
 
 UniversalAnalyticsClient.prototype.trackRemoveProduct = function (
-  productId, productName, category, brand, variant,
-  position, currencyCode, screenName, success, error) {
+  productItem, currencyCode, screenName, success, error
+) {
 
   console.log('AnalyticsService [UniversalAnalyticsClient] [addProduct]');
 
   cordova.exec(success, error, 'UniversalAnalytics', 'sendProductEvent', [
-    productId, productName, category, brand, variant, position,
-    currencyCode, screenName, ProductAction.ACTION_REMOVE, this.trackerName
+    productItem, currencyCode, screenName,
+    ProductAction.ACTION_REMOVE, this.trackerName
   ]);
 };
 
 UniversalAnalyticsClient.prototype.trackProductDetail = function (
-  productId, productName, category, brand, variant,
-  position, currencyCode, screenName, success, error) {
+  productItem, currencyCode, screenName, success, error
+) {
 
   console.log('AnalyticsService [UniversalAnalyticsClient] [addProduct]');
 
   cordova.exec(success, error, 'UniversalAnalytics', 'sendProductEvent', [
-    productId, productName, category, brand, variant, position,
-    currencyCode, screenName, ProductAction.ACTION_DETAIL, this.trackerName
+    productItem, currencyCode, screenName,
+    ProductAction.ACTION_DETAIL, this.trackerName
   ]);
 };
 
@@ -215,18 +219,6 @@ UniversalAnalyticsClient.prototype.trackProductDetail = function (
  * {
  *  step: Number,
  *  option: String (Optional)
- * }
- *
- * ProductItem model
- * {
- *  id: String,
- *  name: String,
- *  category: String, (Optional)
- *  brand: String, (Optional)
- *  variant: String, (Optional)
- *  price: Double, (Optional)
- *  couponCode: String, (Optional)
- *  quantity: Number
  * }
  */
 

@@ -26,6 +26,8 @@
         NSNumber* dispatchPeriod = [command.arguments objectAtIndex:1];
         NSString* trackerName = [command.arguments objectAtIndex:2];
 
+        // NSLog(@"Analytics IOS - going to start GAI tracker");
+
         if (!_trackers) {
           _trackers = [[NSMutableDictionary alloc] init];
         }
@@ -37,11 +39,14 @@
 
         id<GAITracker> tracker = [[GAI sharedInstance] trackerWithName:trackerName trackingId:accountId];
 
+        // NSLog(@"Analytics IOS - tracker %@", [tracker name]);
+
         _trackers[trackerName] = tracker;
 
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
+    // NSLog(@"Analytics IOS - successfully started GAI tracker");
 }
 
 - (id<GAITracker>) getTrackerFromCommand: (CDVInvokedUrlCommand*) command
@@ -299,6 +304,8 @@
     CDVPluginResult* pluginResult = nil;
     id<GAITracker> tracker = [self getTrackerFromCommand:command index:5];
 
+    // NSLog(@"Analytics IOS - going  to track event with the tracker name %@", [tracker name]);
+
     if (!tracker) {
       pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Tracker not started"];
       [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -383,8 +390,12 @@
 - (void) trackView: (CDVInvokedUrlCommand*)command
 {
 
+    // NSLog(@"Analytics IOS - trackView");
+
     CDVPluginResult* pluginResult = nil;
     id<GAITracker> tracker = [self getTrackerFromCommand:command index:3];
+
+    // NSLog(@"Analytics IOS - going track view with tracker %@", [tracker name]);
 
     if (!tracker) {
       pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Tracker not started"];
@@ -464,23 +475,44 @@
     }];
 }
 
+- (GAIEcommerceProduct*) getProductFromDictionary: (NSDictionary*) product
+{
+    GAIEcommerceProduct *GAProduct = [[GAIEcommerceProduct alloc] init];
+
+    // NSLog(@"Analytics IOS - parsing product from NSDictionary: Properties below");
+    // NSLog(@"Analytics IOS - d = %@", [product objectForKey:@"id"]);
+    // NSLog(@"Analytics IOS - name = %@", [product objectForKey:@"name"]);
+    // NSLog(@"Analytics IOS - category = %@", [product objectForKey:@"category"]);
+    // NSLog(@"Analytics IOS - brand = %@", [product objectForKey:@"brand"]);
+    // NSLog(@"Analytics IOS - variant = %@", [product objectForKey:@"variant"]);
+    // NSLog(@"Analytics IOS - quantity = %@", [product objectForKey:@"quantity"]);
+    // NSLog(@"Analytics IOS - price = %@", [product objectForKey:@"price"]);
+    // NSLog(@"Analytics IOS - couponCode = %@", [product objectForKey:@"couponCode"]);
+    // NSLog(@"Analytics IOS - position = %@", [product objectForKey:@"position"]);
+
+    [GAProduct setId: [product objectForKey:@"id"]];
+    [GAProduct setName: [product objectForKey:@"name"]];
+    [GAProduct setCategory: [product objectForKey:@"category"]];
+    [GAProduct setBrand: [product objectForKey:@"brand"]];
+    [GAProduct setVariant: [product objectForKey:@"variant"]];
+    [GAProduct setQuantity: [product objectForKey:@"quantity"]];
+    [GAProduct setPrice: [product objectForKey:@"price"]];
+    [GAProduct setCouponCode: [product objectForKey:@"couponCode"]];
+    [GAProduct setPosition: [product objectForKey:@"position"]];
+
+    [self addCustomDimensionsToProduct:GAProduct];
+
+    return GAProduct;
+}
+
+
 - (void) addProductsToBuilder: (GAIDictionaryBuilder*) builder
                               products: (NSArray *) products
 {
     for (NSDictionary *product in products) {
-      GAIEcommerceProduct *GAIProduct = [[GAIEcommerceProduct alloc] init];
+      GAIEcommerceProduct *GAProduct = [self getProductFromDictionary:product];
 
-      [GAIProduct setId: [product objectForKey:@"id"]];
-      [GAIProduct setName: [product objectForKey:@"name"]];
-      [GAIProduct setCategory: [product objectForKey:@"category"]];
-      [GAIProduct setBrand: [product objectForKey:@"brand"]];
-      [GAIProduct setVariant: [product objectForKey:@"variant"]];
-      [GAIProduct setQuantity: [product objectForKey:@"quantity"]];
-      [GAIProduct setPrice: [product objectForKey:@"price"]];
-      [GAIProduct setCouponCode: [product objectForKey:@"couponCode"]];
-
-      [self addCustomDimensionsToProduct:GAIProduct];
-      [builder addProduct:GAIProduct];
+      [builder addProduct:GAProduct];
     }
 }
 
@@ -488,6 +520,8 @@
 {
     CDVPluginResult* pluginResult = nil;
     id<GAITracker> tracker = [self getTrackerFromCommand:command index:2];
+
+    // NSLog(@"Analytics IOS - going  to track startCheckout with the tracker name %@", [tracker name]);
 
     if (!tracker) {
       pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Tracker not started"];
@@ -518,6 +552,10 @@
         NSNumber *step = [actionField objectForKey:@"step"];
         NSString *stepOption = [actionField objectForKey:@"option"];
 
+        // NSLog(@"Analytics IOS - Adding action field below %@", [tracker name]);
+        // NSLog(@"Analytics IOS - step = %@", step);
+        // NSLog(@"Analytics IOS - stepOption = %@", stepOption);
+
         if (step != nil) {
           [action setCheckoutStep: step];
         }
@@ -542,6 +580,8 @@
 {
     CDVPluginResult* pluginResult = nil;
     id<GAITracker> tracker = [self getTrackerFromCommand:command index:2];
+
+    // NSLog(@"Analytics IOS - going  to track addTransaction with the tracker name %@", [tracker name]);
 
     if (!tracker) {
       pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Tracker not started"];
@@ -571,6 +611,14 @@
 
       [self addProductsToBuilder:builder products: products];
 
+      // NSLog(@"Analytics IOS - Adding transaction details below %@", [tracker name]);
+      // NSLog(@"Analytics IOS - id = %@", [transaction objectForKey:@"id"]);
+      // NSLog(@"Analytics IOS - affiliation = %@", [transaction objectForKey:@"affiliation"]);
+      // NSLog(@"Analytics IOS - revenue = %@", [transaction objectForKey:@"revenue"]);
+      // NSLog(@"Analytics IOS - tax = %@", [transaction objectForKey:@"tax"]);
+      // NSLog(@"Analytics IOS - shipping = %@", [transaction objectForKey:@"shipping"]);
+      // NSLog(@"Analytics IOS - couponCode = %@", [transaction objectForKey:@"couponCode"]);
+
       GAIEcommerceProductAction *action = [[GAIEcommerceProductAction alloc] init];
       [action setAction: kGAIPAPurchase];
       [action setTransactionId: transactionId];
@@ -592,12 +640,12 @@
     }];
 }
 
-// Enhanced Ecommerce
-
 - (void) sendProductEvent: (CDVInvokedUrlCommand*)command
 {
     CDVPluginResult* pluginResult = nil;
-    id<GAITracker> tracker = [self getTrackerFromCommand:command index:9];
+    id<GAITracker> tracker = [self getTrackerFromCommand:command index:4];
+
+    // NSLog(@"Analytics IOS - going to sendProductEvent with the tracker name %@", [tracker name]);
 
     if (!tracker) {
       pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Tracker not started"];
@@ -608,53 +656,26 @@
     [self.commandDelegate runInBackground:^{
 
       CDVPluginResult* pluginResult = nil;
-      NSString *productId = nil;
-      NSString *productName = nil;
-      NSString *category = nil;
-      NSString *brand = nil;
-      NSString *variant = nil;
-      NSNumber *position = nil;
       NSString *currencyCode = nil;
       NSString *screenName = nil;
       NSString *productActionType = nil;
 
-      if ([command.arguments count] > 0)
-          productId = [command.arguments objectAtIndex:0];
+      NSDictionary *product = [command.arguments objectAtIndex:0];
 
       if ([command.arguments count] > 1)
-          productName = [command.arguments objectAtIndex:1];
+          currencyCode = [command.arguments objectAtIndex:1];
 
       if ([command.arguments count] > 2)
-          category = [command.arguments objectAtIndex:2];
+          screenName = [command.arguments objectAtIndex:2];
 
       if ([command.arguments count] > 3)
-          brand = [command.arguments objectAtIndex:3];
+          productActionType = [command.arguments objectAtIndex:3];
 
-      if ([command.arguments count] > 4)
-          variant = [command.arguments objectAtIndex:4];
+      // NSLog(@"Analytics IOS - going to sendProductEvent for the action %@", productActionType);
 
-      if ([command.arguments count] > 5)
-          position = [command.arguments objectAtIndex:5];
+      GAIEcommerceProduct *GAProduct = [self getProductFromDictionary:product];
 
-      if ([command.arguments count] > 6)
-          currencyCode = [command.arguments objectAtIndex:6];
-
-      if ([command.arguments count] > 7)
-          screenName = [command.arguments objectAtIndex:7];
-
-      if ([command.arguments count] > 8)
-          productActionType = [command.arguments objectAtIndex:8];
-
-
-      GAIEcommerceProduct *product = [[GAIEcommerceProduct alloc] init];
-      [product setId: productId];
-      [product setName: productName];
-      [product setCategory: category];
-      [product setBrand: brand];
-      [product setVariant: variant];
-      [product setPosition: position];
-
-      [self addCustomDimensionsToProduct:product];
+      [self addCustomDimensionsToProduct:GAProduct];
 
       GAIEcommerceProductAction *action = [[GAIEcommerceProductAction alloc] init];
       [action setAction: productActionType];
@@ -662,7 +683,7 @@
       GAIDictionaryBuilder *builder = [GAIDictionaryBuilder createScreenView];
       [builder setProductAction:action];
 
-      [builder addProduct:product];
+      [builder addProduct:GAProduct];
       [tracker set:kGAIScreenName value: screenName];
       [tracker set:kGAICurrencyCode value: currencyCode];
       [tracker send:[builder build]];

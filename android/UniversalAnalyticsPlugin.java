@@ -33,8 +33,6 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
     public static final String TRACK_START_CHECKOUT = "trackStartCheckout";
     public static final String ADD_DIMENSION = "addCustomDimension";
     public static final String ADD_TRANSACTION = "addTransaction";
-
-    // Enhanced Ecommerce
     public static final String SEND_PRODUCT_EVENT = "sendProductEvent";
 
     public static final String SET_ALLOW_IDFA_COLLECTION = "setAllowIDFACollection";
@@ -57,136 +55,140 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-        if (START_TRACKER.equals(action)) {
-            String id = args.getString(0);
-            int dispatchPeriod = args.length() > 1 ? args.getInt(1) : 30;
-            String trackerName = this.getTrackerNameFromArgs(args, 2);
-            this.startTracker(trackerName, id, dispatchPeriod, callbackContext);
-            return true;
-        } else if (TRACK_VIEW.equals(action)) {
-            int length = args.length();
-            String screen = args.getString(0);
-            Tracker tracker = this.getTrackerFromArgs(args, 3);
-            this.trackView(tracker, screen, length > 1 && !args.isNull(1) ? args.getString(1) : "",
-                    length > 2 && !args.isNull(2) ? args.getBoolean(2) : false, callbackContext);
-            return true;
-        } else if (TRACK_EVENT.equals(action)) {
-            int length = args.length();
-            if (length > 0) {
-              Tracker tracker = this.getTrackerFromArgs(args, 5);
-              this.trackEvent(tracker, args.getString(0), length > 1 ? args.getString(1) : "",
-                      length > 2 ? args.getString(2) : "", length > 3 ? args.getLong(3) : 0,
-                      length > 4 ? args.getBoolean(4) : false, callbackContext);
-            }
-            return true;
-        } else if (TRACK_EXCEPTION.equals(action)) {
-            String description = args.getString(0);
-            Boolean fatal = args.getBoolean(1);
-            Tracker tracker = this.getTrackerFromArgs(args, 2);
-            this.trackException(tracker, description, fatal, callbackContext);
-            return true;
-        } else if (TRACK_TIMING.equals(action)) {
-            int length = args.length();
-            if (length > 0) {
-              Tracker tracker = this.getTrackerFromArgs(args, 4);
-              this.trackTiming(tracker, args.getString(0), length > 1 ? args.getLong(1) : 0,
-                        length > 2 ? args.getString(2) : "", length > 3 ? args.getString(3) : "", callbackContext);
-            }
-            return true;
-        } else if (TRACK_METRIC.equals(action)) {
-            int length = args.length();
-            if (length > 0) {
-              this.trackMetric(args.getInt(0), length > 1 ? args.getString(1) : "", callbackContext);
-            }
-            return true;
-        } else if (TRACK_START_CHECKOUT.equals(action)) {
-          int length = args.length();
-          if (length > 0) {
-            Tracker tracker = this.getTrackerFromArgs(args, 2);
-            this.trackStartCheckout(
-              tracker,
-              args.getJSONObject(0),
-              args.getString(1), // screen name
-              callbackContext);
-          }
-          return true;
-        } else if (ADD_DIMENSION.equals(action)) {
-            Integer key = args.getInt(0);
-            String value = args.getString(1);
-            this.addCustomDimension(key, value, callbackContext);
-            return true;
-        } else if (ADD_TRANSACTION.equals(action)) {
+
+        // Log.v(TAG, " action " + action);
+        try {
+          if (START_TRACKER.equals(action)) {
+              String id = args.getString(0);
+              int dispatchPeriod = args.length() > 1 ? args.getInt(1) : 30;
+              String trackerName = this.getTrackerNameFromArgs(args, 2);
+              this.startTracker(trackerName, id, dispatchPeriod, callbackContext);
+              return true;
+          } else if (TRACK_VIEW.equals(action)) {
+              int length = args.length();
+              String screen = args.getString(0);
+              Tracker tracker = this.getTrackerFromArgs(args, 3);
+              this.trackView(tracker, screen, length > 1 && !args.isNull(1) ? args.getString(1) : "",
+                      length > 2 && !args.isNull(2) ? args.getBoolean(2) : false, callbackContext);
+              return true;
+          } else if (TRACK_EVENT.equals(action)) {
+              int length = args.length();
+              if (length > 0) {
+                Tracker tracker = this.getTrackerFromArgs(args, 5);
+                this.trackEvent(tracker, args.getString(0), length > 1 ? args.getString(1) : "",
+                        length > 2 ? args.getString(2) : "", length > 3 ? args.getLong(3) : 0,
+                        length > 4 ? args.getBoolean(4) : false, callbackContext);
+              }
+              return true;
+          } else if (TRACK_EXCEPTION.equals(action)) {
+              String description = args.getString(0);
+              Boolean fatal = args.getBoolean(1);
+              Tracker tracker = this.getTrackerFromArgs(args, 2);
+              this.trackException(tracker, description, fatal, callbackContext);
+              return true;
+          } else if (TRACK_TIMING.equals(action)) {
+              int length = args.length();
+              if (length > 0) {
+                Tracker tracker = this.getTrackerFromArgs(args, 4);
+                this.trackTiming(tracker, args.getString(0), length > 1 ? args.getLong(1) : 0,
+                          length > 2 ? args.getString(2) : "", length > 3 ? args.getString(3) : "", callbackContext);
+              }
+              return true;
+          } else if (TRACK_METRIC.equals(action)) {
+              int length = args.length();
+              if (length > 0) {
+                this.trackMetric(args.getInt(0), length > 1 ? args.getString(1) : "", callbackContext);
+              }
+              return true;
+          } else if (TRACK_START_CHECKOUT.equals(action)) {
             int length = args.length();
             if (length > 0) {
               Tracker tracker = this.getTrackerFromArgs(args, 2);
-              this.addTransaction(
+              this.trackStartCheckout(
                 tracker,
                 args.getJSONObject(0),
                 args.getString(1), // screen name
                 callbackContext);
             }
             return true;
-        }
-        else if (SEND_PRODUCT_EVENT.equals(action)) {
-            int length = args.length();
+          } else if (ADD_DIMENSION.equals(action)) {
+              Integer key = args.getInt(0);
+              String value = args.getString(1);
+              this.addCustomDimension(key, value, callbackContext);
+              return true;
+          } else if (ADD_TRANSACTION.equals(action)) {
+              int length = args.length();
+              if (length > 0) {
+                Tracker tracker = this.getTrackerFromArgs(args, 2);
+                this.addTransaction(
+                  tracker,
+                  args.getJSONObject(0),
+                  args.getString(1), // screen name
+                  callbackContext);
+              }
+              return true;
+          }
+          else if (SEND_PRODUCT_EVENT.equals(action)) {
+              int length = args.length();
 
-            if (length > 0) {
-              Tracker tracker = this.getTrackerFromArgs(args, 9);
-              this.sendProductEvent(
-                tracker,
-                args.getString(0),
-                length > 1 ? args.getString(1) : "",
-                length > 2 ? args.getString(2) : "",
-                length > 3 ? args.getString(3) : "",
-                length > 4 ? args.getString(4) : "",
-                length > 5 && !args.isNull(5) ? args.getInt(5) : 1,
-                length > 6 ? args.getString(6) : "",
-                length > 7 ? args.getString(7) : "",
-                length > 8 ? args.getString(8) : "",
-                callbackContext
-              );
-            }
+              if (length > 0) {
+                Tracker tracker = this.getTrackerFromArgs(args, 4);
+                this.sendProductEvent(
+                  tracker,
+                  args.getJSONObject(0),
+                  length > 1 ? args.getString(1) : "", // currency code
+                  length > 2 ? args.getString(2) : "", // screen name
+                  length > 3 ? args.getString(3) : "", // product action type
+                  callbackContext
+                );
+              }
+              return true;
+          } else if (SET_ALLOW_IDFA_COLLECTION.equals(action)) {
+            Tracker tracker = this.getTrackerFromArgs(args, 1);
+            this.setAllowIDFACollection(tracker, args.getBoolean(0), callbackContext);
+          } else if (SET_USER_ID.equals(action)) {
+            String userId = args.getString(0);
+            Tracker tracker = this.getTrackerFromArgs(args, 1);
+            this.setUserId(tracker, userId, callbackContext);
+          } else if (SET_ANONYMIZE_IP.equals(action)) {
+            boolean anonymize = args.getBoolean(0);
+            Tracker tracker = this.getTrackerFromArgs(args, 1);
+            this.setAnonymizeIp(tracker, anonymize, callbackContext);
+          } else if (SET_OPT_OUT.equals(action)) {
+            boolean optout = args.getBoolean(0);
+            Tracker tracker = this.getTrackerFromArgs(args, 1);
+            this.setOptOut(tracker, optout, callbackContext);
+          } else if (SET_APP_VERSION.equals(action)) {
+            String version = args.getString(0);
+            Tracker tracker = this.getTrackerFromArgs(args, 1);
+            this.setAppVersion(tracker, version, callbackContext);
+          } else if (GET_VAR.equals(action)) {
+            String variable = args.getString(0);
+            Tracker tracker = this.getTrackerFromArgs(args, 1);
+            this.getVar(tracker, variable, callbackContext);
+          } else if (SET_VAR.equals(action)) {
+            String variable = args.getString(0);
+            String value = args.getString(1);
+            Tracker tracker = this.getTrackerFromArgs(args, 2);
+            this.setVar(tracker, variable, value, callbackContext);
             return true;
-        } else if (SET_ALLOW_IDFA_COLLECTION.equals(action)) {
-          Tracker tracker = this.getTrackerFromArgs(args, 1);
-          this.setAllowIDFACollection(tracker, args.getBoolean(0), callbackContext);
-        } else if (SET_USER_ID.equals(action)) {
-          String userId = args.getString(0);
-          Tracker tracker = this.getTrackerFromArgs(args, 1);
-          this.setUserId(tracker, userId, callbackContext);
-        } else if (SET_ANONYMIZE_IP.equals(action)) {
-          boolean anonymize = args.getBoolean(0);
-          Tracker tracker = this.getTrackerFromArgs(args, 1);
-          this.setAnonymizeIp(tracker, anonymize, callbackContext);
-        } else if (SET_OPT_OUT.equals(action)) {
-          boolean optout = args.getBoolean(0);
-          Tracker tracker = this.getTrackerFromArgs(args, 1);
-          this.setOptOut(tracker, optout, callbackContext);
-        } else if (SET_APP_VERSION.equals(action)) {
-          String version = args.getString(0);
-          Tracker tracker = this.getTrackerFromArgs(args, 1);
-          this.setAppVersion(tracker, version, callbackContext);
-        } else if (GET_VAR.equals(action)) {
-          String variable = args.getString(0);
-          Tracker tracker = this.getTrackerFromArgs(args, 1);
-          this.getVar(tracker, variable, callbackContext);
-        } else if (SET_VAR.equals(action)) {
-          String variable = args.getString(0);
-          String value = args.getString(1);
-          Tracker tracker = this.getTrackerFromArgs(args, 2);
-          this.setVar(tracker, variable, value, callbackContext);
-          return true;
-        } else if (DISPATCH.equals(action)) {
-          Tracker tracker = this.getTrackerFromArgs(args, 0);
-          this.dispatch(tracker, callbackContext);
-          return true;
-        } else if (DEBUG_MODE.equals(action)) {
-          this.debugMode(callbackContext);
-        } else if (ENABLE_UNCAUGHT_EXCEPTION_REPORTING.equals(action)) {
-          Boolean enable = args.getBoolean(0);
-          Tracker tracker = this.getTrackerFromArgs(args, 1);
-          this.enableUncaughtExceptionReporting(tracker, enable, callbackContext);
+          } else if (DISPATCH.equals(action)) {
+            Tracker tracker = this.getTrackerFromArgs(args, 0);
+            this.dispatch(tracker, callbackContext);
+            return true;
+          } else if (DEBUG_MODE.equals(action)) {
+            this.debugMode(callbackContext);
+          } else if (ENABLE_UNCAUGHT_EXCEPTION_REPORTING.equals(action)) {
+            Boolean enable = args.getBoolean(0);
+            Tracker tracker = this.getTrackerFromArgs(args, 1);
+            this.enableUncaughtExceptionReporting(tracker, enable, callbackContext);
+          }
+        } catch (Exception e) {
+          Log.v(TAG, "Exception in analytics action `" + action + "`");
+          System.out.println(e);
+          callbackContext.error("Error executing the action `" + action + "`. Please see the logcat output");
         }
+
         return false;
     }
 
@@ -266,42 +268,68 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         }
     }
 
+    private Product getProductFromJsonObject(JSONObject productData) throws JSONException {
+
+      // Log.v(TAG, " Parsing product from JSONObject: Properties below ");
+      // Log.v(TAG, " id = " + (productData.has("id") ? productData.getString("id") : "NO ID"));
+      // Log.v(TAG, " name = " + (productData.has("name") ? productData.getString("name") : "NO NAME"));
+      // Log.v(TAG, " category = " + (productData.has("category") ? productData.getString("category") : "NO CATEGORY"));
+      // Log.v(TAG, " brand = " + (productData.has("brand") ? productData.getString("brand") : "NO BRAND"));
+      // Log.v(TAG, " variant = " + (productData.has("variant") ? productData.getString("variant") : "NO VARIANT"));
+      // Log.v(TAG, " price = " + (productData.has("price") && !productData.isNull("price") ? productData.getString("price") : "NO PRICE"));
+      // Log.v(TAG, " icouponCoded = " + (productData.has("couponCode") ? productData.getString("couponCode") : "NO COUPON CODE"));
+      // Log.v(TAG, " quantity = " + (productData.has("quantity") && !productData.isNull("quantity") ? productData.getString("quantity") : "NO QUANTITY"));
+      // Log.v(TAG, " position = " + (productData.has("position") && !productData.isNull("position") ? productData.getInt("position") : "NO POSITION"));
+
+        Product product =  new Product()
+            .setId(productData.getString("id"))
+            .setName(productData.getString("name"));
+
+        if (productData.has("price") && !productData.isNull("price")) {
+          product.setPrice(productData.getDouble("price"));
+        }
+
+        if (productData.has("category")) {
+          product.setCategory(productData.getString("category"));
+        }
+
+        if (productData.has("brand")) {
+          product.setBrand(productData.getString("brand"));
+        }
+
+        if (productData.has("variant")) {
+          product.setVariant(productData.getString("variant"));
+        }
+
+        if (productData.has("couponCode")) {
+          product.setCouponCode(productData.getString("couponCode"));
+        }
+
+        if (productData.has("quantity") && !productData.isNull("quantity")) {
+          product.setQuantity(productData.getInt("quantity"));
+        } else {
+          product.setQuantity(1);
+        }
+
+        if (productData.has("position") && !productData.isNull("position")) {
+          product.setPosition(productData.getInt("position"));
+        }
+
+        return product;
+    }
+
     private void addProductsToHitBuilder(HitBuilder builder, JSONArray products) throws JSONException {
         for (int i = 0; i < products.length(); i++) {
           JSONObject productData = products.getJSONObject(i);
-
-          Product product =  new Product()
-              .setId(productData.getString("id"))
-              .setName(productData.getString("name"))
-              .setPrice(productData.getDouble("price"));
-
-          if (productData.has("category")) {
-            product.setCategory(productData.getString("category"));
-          }
-
-          if (productData.has("brand")) {
-            product.setBrand(productData.getString("brand"));
-          }
-
-          if (productData.has("variant")) {
-            product.setVariant(productData.getString("variant"));
-          }
-
-          if (productData.has("couponCode")) {
-            product.setCouponCode(productData.getString("couponCode"));
-          }
-
-          if (productData.has("quantity")) {
-            product.setQuantity(productData.getInt("quantity"));
-          } else {
-            product.setQuantity(1);
-          }
+          Product product = getProductFromJsonObject(productData);
 
           builder.addProduct(product);
         }
     }
 
     private void trackView(Tracker tracker, String screenname, String campaignUrl, boolean newSession, CallbackContext callbackContext) {
+      // Log.v(TAG, "going to track view with tracker " + tracker);
+
         if (tracker == null) {
             callbackContext.error("Tracker not started");
             return;
@@ -331,6 +359,8 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
 
     private void trackEvent(Tracker tracker, String category, String action, String label, long value, boolean newSession,
             CallbackContext callbackContext) {
+
+        // Log.v(TAG, "going to track event with tracker " + tracker);
 
         if (tracker == null) {
             callbackContext.error("Tracker not started");
@@ -416,6 +446,8 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
     }
 
     private void trackStartCheckout(Tracker tracker, JSONObject checkoutModel, String screenName, CallbackContext callbackContext) throws JSONException {
+      // Log.v(TAG, " addTransaction " + tracker);
+
       if (tracker == null) {
           callbackContext.error("Tracker not started");
           return;
@@ -431,6 +463,10 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
 
       if (checkoutModel.has("actionField")) {
         JSONObject actionFieldModel = checkoutModel.getJSONObject("actionField");
+
+        // Log.v(TAG, " Adding action field details below ");
+        // Log.v(TAG, " step = " + (actionFieldModel.has("step") ? actionFieldModel.getInt("step") : "NO STEP FOR ACTION FIELD IN START CHECKOUT"));
+        // Log.v(TAG, " option = " + (actionFieldModel.has("option") ? actionFieldModel.getString("option") : "NO OPTION FOR ACTION FIELD IN START CHECKOUT"));
 
         if (actionFieldModel.has("step")) {
           productAction.setCheckoutStep(actionFieldModel.getInt("step"));
@@ -474,6 +510,14 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         JSONArray products = transaction.getJSONArray("products");
         addProductsToHitBuilder(hitBuilder, products);
 
+        // Log.v(TAG, " Adding transaction details below ");
+        // Log.v(TAG, " transaction id = " + transactionId);
+        // Log.v(TAG, " affiliation = " + transaction.getString("affiliation"));
+        // Log.v(TAG, " revenue = " + transaction.getString("revenue"));
+        // Log.v(TAG, " tax = " + transaction.getString("tax"));
+        // Log.v(TAG, " shipping = " + transaction.getString("shipping"));
+        // Log.v(TAG, " couponCode = " + (transaction.has("couponCode") ? transaction.getString("couponCode") : "NO COUPON CODE FOR TRANSACTION"));
+
         ProductAction productAction = new ProductAction(ProductAction.ACTION_PURCHASE)
             .setTransactionId(transactionId);
 
@@ -509,33 +553,31 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         callbackContext.success("Add Transaction: " + transactionId);
     }
 
-    private void sendProductEvent(Tracker tracker, String productId, String productName,
-      String category, String brand, String variant, Integer position,
-      String currencyCode, String screenName, String productActionType,
-      CallbackContext callbackContext) {
+    private void sendProductEvent(Tracker tracker,
+    // String productId, String productName,
+      // Double price, Integer quantity, String category, String brand, String variant,
+      // Integer position,
+      JSONObject product, String currencyCode,
+      String screenName, String productActionType, CallbackContext callbackContext) throws JSONException {
 
-        Log.v(TAG, " sendProductEvent for action - " + productActionType);
+        // Log.v(TAG, " sendProductEvent for action - " + productActionType);
 
         if (tracker == null) {
             callbackContext.error("Tracker not started");
             return;
         }
 
-        if (null != productId && productId.length() > 0) {
-          Product product =  new Product()
-              .setId(productId)
-              .setName(productName)
-              .setCategory(category)
-              .setBrand(brand)
-              .setVariant(variant)
-              .setPosition(position);
+        String productId = product.getString("id");
 
-          addCustomDimensionsAndMetricsToHitBuilder(product);
+        if (null != productId && productId.length() > 0) {
+          Product GAProduct = getProductFromJsonObject(product);
+
+          addCustomDimensionsAndMetricsToHitBuilder(GAProduct);
 
           ProductAction productAction = new ProductAction(productActionType);
 
           HitBuilders.ScreenViewBuilder builder = new HitBuilders.ScreenViewBuilder()
-              .addProduct(product)
+              .addProduct(GAProduct)
               .setProductAction(productAction);
 
           tracker.setScreenName(screenName);
