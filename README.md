@@ -51,8 +51,8 @@ cordova plugin add cordova-plugin-google-analytics --variable GMS_VERSION=11.0.1
 v1.0.0 -- api change from ```window.analytics``` to ```window.ga```, 'analytics' is deprecated since 1.0.0 and you should use the new api 'ga',
 because in the next release we are removing the analytics.
 
-v1.7.x -- since this version there are new parameters in some of the old methods like `startTrackerWithId('UA-XXXX-YY', 30)` 
-and this is causing errors for those who are using the ionic 2(ionic-native) or ionic 1 (ngCordova); 
+v1.7.x -- since this version there are new parameters in some of the old methods like `startTrackerWithId('UA-XXXX-YY', 30)`
+and this is causing errors for those who are using the ionic 2(ionic-native) or ionic 1 (ngCordova);
 these wrapper interfaces don't have the new parameters at the time we did the changes; so please update you ionic framework to the lastest version.
 
 v1.7.11 -- since this version there is back compatibility with the new and old parameters in the method `startTrackerWithId('UA-XXXX-YY', 30)` to avoid loading issues reported.
@@ -61,90 +61,174 @@ v1.8.4 -- fix conflicting versions of google play services due to multiple imple
 
 v1.9.0 -- since this version the windows platform is supported.
 
+v1.10.0 --
+- Add support for multiple trackers
+- Add support for Enhanced Ecommerce
+**BREAKING CHANGES**
+Since this version you need to use an `analyticsInstance` to call the analytics methods.
+The `window.ga.startTrackerWithId()` will return that `analyticsInstance` for the specific `GAID`. This was changed to support multiple trackers.
+
 # JavaScript Usage
 
 **All the following methods accept optional success and error callbacks after all other available parameters.**
 
+### Start the analytics
 ```js
 //In your 'deviceready' handler, set up your Analytics tracker:
-window.ga.startTrackerWithId('UA-XXXX-YY', 30)
-//where UA-XXXX-YY is your Google Analytics Mobile App property and 30 is the dispatch period (optional)
+var GAID = 'UA-XXXX-YY'; // where UA-XXXX-YY is your Google Analytics Mobile App property
+var dispatchPeriod = 30;
+var success = function(){};
+var error = function(){};
+var trackerName = 'exampleTracker'; // Default name is `default`
+var analyticsInstance = window.ga.startTrackerWithId(GAID, dispatchPeriod, success, error, trackerName)
+```
 
+### To get an analytics instance
+```js
+// GET by name
+var analyticsInstance = window.ga.getByName('exampleTracker');
+// UniversalAnalyticsClient
+
+// GET the default tracker
+var analyticsInstance = window.ga.getDefaultTracker();
+// UniversalAnalyticsClient
+
+// GET All trackers
+var analyticsInstanceList = window.ga.getAll();
+// [UniversalAnalyticsClient]
+```
+
+### Track events
+```js
 //To track a Screen (PageView):
-window.ga.trackView('Screen Title')
+analyticsInstance.trackView('Screen Title')
 
 //To track a Screen (PageView) w/ campaign details:
-window.ga.trackView('Screen Title', 'my-scheme://content/1111?utm_source=google&utm_campaign=my-campaign')
+analyticsInstance.trackView('Screen Title', 'my-scheme://content/1111?utm_source=google&utm_campaign=my-campaign')
 
 //To track a Screen (PageView) and create a new session:
-window.ga.trackView('Screen Title', '', true)
+analyticsInstance.trackView('Screen Title', '', true)
 
 //To track an Event:
-window.ga.trackEvent('Category', 'Action', 'Label', Value)// Label and Value are optional, Value is numeric
+analyticsInstance.trackEvent('Category', 'Action', 'Label', Value)// Label and Value are optional, Value is numeric
 
 //To track an Event and create a new session:
-window.ga.trackEvent('Category', 'Action', 'Label', Value, true)// Label, Value and newSession are optional, Value is numeric, newSession is true/false
+analyticsInstance.trackEvent('Category', 'Action', 'Label', Value, true)// Label, Value and newSession are optional, Value is numeric, newSession is true/false
 
 //To track custom metrics:
 //(trackMetric doesn't actually send a hit, it's behaving more like the addCustomDimension() method.
 // The metric is afterwards added to every hit (view, event, error, etc...) sent, but the defined scope of the custom metric in analytics backend
 //   (hit or product) will determine, at processing time, which hits are associated with the metric value.)
-window.ga.trackMetric(Key, Value) // Key and value are numeric type, Value is optional (omit value to unset metric)
+analyticsInstance.trackMetric(Key, Value) // Key and value are numeric type, Value is optional (omit value to unset metric)
 
 //To track an Exception:
-window.ga.trackException('Description', Fatal)//where Fatal is boolean
+analyticsInstance.trackException('Description', Fatal)//where Fatal is boolean
 
 //To track User Timing (App Speed):
-window.ga.trackTiming('Category', IntervalInMilliseconds, 'Variable', 'Label') // where IntervalInMilliseconds is numeric
-
-//To add a Transaction (Ecommerce) -- Deprecated on 1.9.0 will be removed on next minor version (1.10.0).
-window.ga.addTransaction('ID', 'Affiliation', Revenue, Tax, Shipping, 'Currency Code')// where Revenue, Tax, and Shipping are numeric
-
-//To add a Transaction Item (Ecommerce) -- Deprecated on 1.9.0 will be removed on next minor version (1.10.0).
-window.ga.addTransactionItem('ID', 'Name', 'SKU', 'Category', Price, Quantity, 'Currency Code')// where Price and Quantity are numeric
+analyticsInstance.trackTiming('Category', IntervalInMilliseconds, 'Variable', 'Label') // where IntervalInMilliseconds is numeric
 
 //To add a Custom Dimension
 //(The dimension is afterwards added to every hit (view, event, error, etc...) sent, but the defined scope of the custom dimension in analytics backend
 //   (hit or product) will determine, at processing time, which hits are associated with the dimension value.)
-window.ga.addCustomDimension(Key, 'Value', success, error)
+analyticsInstance.addCustomDimension(Key, 'Value', success, error)
 //Key should be integer index of the dimension i.e. send `1` instead of `dimension1` for the first custom dimension you are tracking. e.g. `window.ga.addCustomDimension(1, 'Value', success, error)`
 //Use empty string as value to unset custom dimension.
 
 //To set a UserId:
-window.ga.setUserId('my-user-id')
+analyticsInstance.setUserId('my-user-id')
 
 //To set a specific app version:
-window.ga.setAppVersion('1.33.7')
+analyticsInstance.setAppVersion('1.33.7')
 
 //To get a specific variable using this key list https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters:
 //for example to get campaign name:
-window.ga.getVar('cn', function(result){ console.log(result);})
+analyticsInstance.getVar('cn', function(result){ console.log(result);})
 
 //To set a specific variable using this key list https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters:
 //for example to set session control:
-window.ga.setVar('sc', 'end', function(result){ console.log(result);})
+analyticsInstance.setVar('sc', 'end', function(result){ console.log(result);})
 
 //To manually dispatch any data (this is not implemented in browser platform):
-window.ga.dispatch()
+analyticsInstance.dispatch()
 
 //To set a anonymize Ip address:
-window.ga.setAnonymizeIp(true)
+analyticsInstance.setAnonymizeIp(true)
 
 //To set Opt-out:
-window.ga.setOptOut(true)
+analyticsInstance.setOptOut(true)
 
 //To enabling Advertising Features in Google Analytics allows you to take advantage of Remarketing, Demographics & Interests reports, and more:
-window.ga.setAllowIDFACollection(true)
+analyticsInstance.setAllowIDFACollection(true)
 
 To enable verbose logging:
-window.ga.debugMode()
+analyticsInstance.debugMode()
 // set's dry run mode on Android and Windows platform, so that all hits are only echoed back by the google analytics service and no actual hit is getting tracked!
-// **Android quirk**: verbose logging within javascript console is not supported. To see debug responses from analytics execute 
-// `adb shell setprop log.tag.GAv4 DEBUG` and then `adb logcat -v time -s GAv4` to list messages 
+// **Android quirk**: verbose logging within javascript console is not supported. To see debug responses from analytics execute
+// `adb shell setprop log.tag.GAv4 DEBUG` and then `adb logcat -v time -s GAv4` to list messages
 // (see https://developers.google.com/android/reference/com/google/android/gms/analytics/Logger)
 
 //To enable/disable automatic reporting of uncaught exceptions
-window.ga.enableUncaughtExceptionReporting(Enable, success, error)// where Enable is boolean
+analyticsInstance.enableUncaughtExceptionReporting(Enable, success, error)// where Enable is boolean
+```
+
+### Track Enhanced Ecommerce events
+```js
+See below the models used for these events:
+/*
+ * Transaction model
+ * {
+ *  id: String,
+ *  affiliation: String,
+ *  revenue: Double, (Optional)
+ *  tax: Double, (Optional)
+ *  shipping: Double, (Optional)
+ *  couponCode: String, (Optional)
+ *  currencyCode: String,
+ *  products: [ProductItem]
+ * }
+ *
+ *
+ * ProductItem model
+ * {
+ *  id: String,
+ *  name: String,
+ *  category: String, (Optional)
+ *  brand: String, (Optional)
+ *  variant: String, (Optional)
+ *  price: Double,
+ *  quantity: Number,
+ *  couponCode: String, (Optional)
+ *  position: Number, (Optional)
+ * }
+ *
+ *
+ * Checkout model
+ * {
+ *  actionField: ActionField, (Optional)
+ *  products: [ProductItem],
+ *  currency: String (Optional)
+ * }
+ *
+ * ActionField model
+ * {
+ *  step: Number,
+ *  option: String (Optional)
+ * }
+ * */
+// To add a transaction
+analyticsInstance.addTransaction(transactionModel, screenName, success, error)
+
+// To track Add Product to Cart
+analyticsInstance.trackAddProduct(productItemModel, currencyCode, screenName, success, error)
+
+// To track Remove Product from Cart
+analyticsInstance.trackRemoveProduct(productItemModel, currencyCode, screenName, success, error)
+
+// To track Product Details screens
+analyticsInstance.trackProductDetail(productItemModel, currencyCode, screenName, success, error)
+
+// To track ACTION_CHECKOUT
+analyticsInstance.trackStartCheckout(checkoutModel, screenName, success, error)
 ```
 
 # Example use ionic (Ionic Native)
@@ -158,17 +242,17 @@ import { Platform } from 'ionic-angular';
 ...
 
   constructor(private ga: GoogleAnalytics, private platform: Platform) { }
-  
+
   initializeApp() {
     this.platform.ready().then(() => {
       this.ga.startTrackerWithId('UA-00000000-0')
-        .then(() => {
+        .then((analyticsInstance) => {
           console.log('Google analytics is ready now');
           //the component is ready and you can call any method here
-          this.ga.debugMode();
-          this.ga.setAllowIDFACollection(true);
+          analyticsInstance.debugMode();
+          analyticsInstance.setAllowIDFACollection(true);
         })
-        .catch(e => console.log('Error starting GoogleAnalytics', e));      
+        .catch(e => console.log('Error starting GoogleAnalytics', e));
     });
   }
 ```
@@ -218,8 +302,8 @@ analyticsService.trackView('Home');
 
 # Browser (PWA)
 
-For browser (PWA), people who want to use the plugin in a website that has already integrated google analytics needs 
-to make sure that they remove the google analytics snippet from the head section of the page and change the global `ga` 
+For browser (PWA), people who want to use the plugin in a website that has already integrated google analytics needs
+to make sure that they remove the google analytics snippet from the head section of the page and change the global `ga`
 object name to something else. The plugin uses `nativeGa` instead. This can be changed by the following code.
 
 ```js
