@@ -132,13 +132,14 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
               int length = args.length();
 
               if (length > 0) {
-                Tracker tracker = this.getTrackerFromArgs(args, 4);
+                Tracker tracker = this.getTrackerFromArgs(args, 5);
                 this.sendProductEvent(
                   tracker,
                   args.getJSONObject(0),
                   length > 1 ? args.getString(1) : "", // currency code
                   length > 2 ? args.getString(2) : "", // screen name
                   length > 3 ? args.getString(3) : "", // product action type
+                  length > 4 ? args.getString(4) : "", // product action list
                   callbackContext
                 );
               }
@@ -558,7 +559,8 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
       // Double price, Integer quantity, String category, String brand, String variant,
       // Integer position,
       JSONObject product, String currencyCode,
-      String screenName, String productActionType, CallbackContext callbackContext) throws JSONException {
+      String screenName, String productActionType,
+      String productActionList, CallbackContext callbackContext) throws JSONException {
 
         // Log.v(TAG, " sendProductEvent for action - " + productActionType);
 
@@ -575,6 +577,10 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
           addCustomDimensionsAndMetricsToHitBuilder(GAProduct);
 
           ProductAction productAction = new ProductAction(productActionType);
+
+          if (productActionList != null && productActionList.length() > 0) {
+            productAction.setProductActionList(productActionList);
+          }
 
           HitBuilders.ScreenViewBuilder builder = new HitBuilders.ScreenViewBuilder()
               .addProduct(GAProduct)

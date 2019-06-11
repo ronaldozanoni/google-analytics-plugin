@@ -219,13 +219,13 @@ See below the models used for these events:
 analyticsInstance.addTransaction(transactionModel, screenName, success, error)
 
 // To track Add Product to Cart
-analyticsInstance.trackAddProduct(productItemModel, currencyCode, screenName, success, error)
+analyticsInstance.trackAddProduct(productItemModel, currencyCode, screenName, productActionList, success, error)
 
 // To track Remove Product from Cart
-analyticsInstance.trackRemoveProduct(productItemModel, currencyCode, screenName, success, error)
+analyticsInstance.trackRemoveProduct(productItemModel, currencyCode, screenName, productActionList, success, error)
 
 // To track Product Details screens
-analyticsInstance.trackProductDetail(productItemModel, currencyCode, screenName, success, error)
+analyticsInstance.trackProductDetail(productItemModel, currencyCode, screenName, productActionList, success, error)
 
 // To track ACTION_CHECKOUT
 analyticsInstance.trackStartCheckout(checkoutModel, screenName, success, error)

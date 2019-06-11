@@ -643,7 +643,7 @@
 - (void) sendProductEvent: (CDVInvokedUrlCommand*)command
 {
     CDVPluginResult* pluginResult = nil;
-    id<GAITracker> tracker = [self getTrackerFromCommand:command index:4];
+    id<GAITracker> tracker = [self getTrackerFromCommand:command index:5];
 
     // NSLog(@"Analytics IOS - going to sendProductEvent with the tracker name %@", [tracker name]);
 
@@ -659,6 +659,7 @@
       NSString *currencyCode = nil;
       NSString *screenName = nil;
       NSString *productActionType = nil;
+      NSString *productActionList = nil;
 
       NSDictionary *product = [command.arguments objectAtIndex:0];
 
@@ -671,6 +672,9 @@
       if ([command.arguments count] > 3)
           productActionType = [command.arguments objectAtIndex:3];
 
+      if ([command.arguments count] > 4)
+          productActionList = [command.arguments objectAtIndex:4];
+
       // NSLog(@"Analytics IOS - going to sendProductEvent for the action %@", productActionType);
 
       GAIEcommerceProduct *GAProduct = [self getProductFromDictionary:product];
@@ -679,6 +683,10 @@
 
       GAIEcommerceProductAction *action = [[GAIEcommerceProductAction alloc] init];
       [action setAction: productActionType];
+
+      if (productActionList != nil) {
+        [action setProductActionList: productActionList];
+      }
 
       GAIDictionaryBuilder *builder = [GAIDictionaryBuilder createScreenView];
       [builder setProductAction:action];
